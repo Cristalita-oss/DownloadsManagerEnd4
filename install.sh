@@ -41,7 +41,7 @@ NC='\033[0m'
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 QML_DEST="${HOME}/.config/quickshell/ii/modules/ii/mediaDownloader"
 QS_CONFIG_DIR="${HOME}/.config/quickshell/ii"
-NODE_MIN_VERSION="18.0.0"
+NODE_MIN_VERSION="22.0.0"
 BACKUP_SUFFIX=".mdc-backup"
 INTEGRATE=true
 
@@ -168,8 +168,9 @@ check_cmd "yt-dlp" "sudo pacman -S yt-dlp  |  pip install yt-dlp |  brew install
 if command -v node &>/dev/null; then
     NODE_VER=$(node --version)
     if ! version_ge "$NODE_VER" "$NODE_MIN_VERSION"; then
-        log_warn "Node.js $NODE_VER detectado (mínimo: v${NODE_MIN_VERSION}+)"
-        log_warn "Actualiza Node.js para evitar problemas."
+        log_error "Node.js $NODE_VER detectado; se requiere v${NODE_MIN_VERSION}+."
+        log_error "Actualiza Node.js antes de continuar."
+        exit 1
     fi
 fi
 
@@ -182,36 +183,32 @@ fi
 # ═════════════════════════════════════════════════════════════════════════════
 # PASO 2 — Dependencias de Node.js
 # ═════════════════════════════════════════════════════════════════════════════
-log_step "2/7 — Dependencias de Node.js (npm install)"
+log_step "2/7 — Dependencias de Node.js (npm ci)"
 
 cd "$REPO_DIR"
 
 if [ -f package-lock.json ]; then
-    npm ci --silent --no-audit --no-fund 2>&1 | tail -1
+    npm ci --no-audit --no-fund
 else
-    npm install --silent --no-audit --no-fund 2>&1 | tail -1
+    npm install --no-audit --no-fund
 fi
 
-# npm >= 11 omite los scripts de build nativos en modo no interactivo:
-# reconstruir better-sqlite3 explícitamente, con fallback directo.
-SQLITE3_BIN="$(find node_modules/better-sqlite3 -name 'better_sqlite3.node' 2>/dev/null | head -1 || true)"
-if [ -z "$SQLITE3_BIN" ]; then
-    npm rebuild better-sqlite3 --silent --no-audit --no-fund 2>&1 | tail -1
-fi
-SQLITE3_BIN="$(find node_modules/better-sqlite3 -name 'better_sqlite3.node' 2>/dev/null | head -1 || true)"
-if [ -z "$SQLITE3_BIN" ]; then
-    log_info "npm rebuild no compiló el nativo — ejecutando el script del paquete..."
-    (cd node_modules/better-sqlite3 && npm run install --silent --no-audit --no-fund) 2>&1 | tail -1
-fi
-SQLITE3_BIN="$(find node_modules/better-sqlite3 -name 'better_sqlite3.node' 2>/dev/null | head -1 || true)"
-if [ -z "$SQLITE3_BIN" ]; then
-    log_error "El binario nativo de better-sqlite3 no se compiló."
-    log_error "Intenta manualmente: cd node_modules/better-sqlite3 && npm run install"
+SQLITE3_TEST_OUTPUT=""
+if ! SQLITE3_TEST_OUTPUT="$(node -e '
+    const Database = require("better-sqlite3");
+    const db = new Database(":memory:");
+    db.prepare("SELECT 1").get();
+    db.close();
+' 2>&1)"; then
+    log_error "better-sqlite3 no pudo cargarse o ejecutar una consulta."
+    if [ -n "$SQLITE3_TEST_OUTPUT" ]; then
+        printf '%s\n' "$SQLITE3_TEST_OUTPUT"
+    fi
     exit 1
 fi
 
 log_ok "Paquetes npm instalados correctamente"
-log_ok "better-sqlite3 nativo compilado ✓"
+log_ok "better-sqlite3 nativo verificado ✓"
 
 # ═════════════════════════════════════════════════════════════════════════════
 # PASO 3 — Compilar TypeScript

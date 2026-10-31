@@ -4,6 +4,9 @@
   "description": "Centro de Descargas Multimedia para Hyprland/QuickShell",
   "license": "MIT",
   "author": "DylonTech <dilangabrielm@gmail.com>",
+  "engines": {
+    "node": ">=22"
+  },
   "keywords": [
     "quickshell",
     "hyprland",
@@ -21,7 +24,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "better-sqlite3": "^11.8.1"
+    "better-sqlite3": "^13.0.3"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",

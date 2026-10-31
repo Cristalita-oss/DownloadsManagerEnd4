@@ -273,22 +273,24 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    A["1/6 Dependencias<br/>node ≥18 · npm · yt-dlp"] --> B["2/6 npm ci<br/>+ rebuild better-sqlite3"]
-    B --> C["3/6 tsc → dist/"]
-    C --> D["4/6 Copia 8 QML<br/>+ parcheo ruta backend"]
-    D --> E["5/6 Integración config ii<br/>backups + GlobalStates<br/>+ PanelLoader + IpcHandler"]
-    E --> F["6/6 Smoke test<br/>ping JSON-RPC"]
-    F --> G["✅ Instalado"]
+    A["1/7 Dependencias<br/>node ≥22 · npm · yt-dlp"] --> B["2/7 npm ci<br/>+ prueba SQLite nativa"]
+    B --> C["3/7 tsc → dist/"]
+    C --> D["4/7 Copia módulos QML"]
+    D --> E["5/7 Integración config ii<br/>backups + widgets + pestaña"]
+    E --> F["6/7 systemd --user<br/>+ atajo Hyprland"]
+    F --> G["7/7 Smoke test<br/>ping JSON-RPC"]
+    G --> H["✅ Instalado"]
 ```
 
 | Paso | Detalle | Estado en la prueba |
 |------|---------|----------------------|
-| 1/6 | Verifica `node` (≥18), `npm`, `yt-dlp` en PATH | ✅ node v22.23.3 · npm 12.1.0 · yt-dlp 2026.08.19 |
-| 2/6 | `npm ci` + **rebuild de better-sqlite3** (npm ≥11 omite build scripts nativos en modo no interactivo) + verificación del `.node` | ✅ (requirió el fallback `npm run install`) |
-| 3/6 | `tsc` → `dist/index.js` | ✅ |
-| 4/6 | Copia los 8 `.qml` y **sustituye `__BACKEND_DIR__`** por la ruta absoluta real del repo en la línea `command:` | ✅ → `["/usr/bin/node", ".../dist/index.js"]` |
-| 5/6 | Backup único (`*.mdc-backup`) y ediciones **idempotentes** en: `GlobalStates.qml` (propiedad de visibilidad), `IllogicalImpulseFamily.qml` (import + `PanelLoader`), `shell.qml` (`IpcHandler target "mediaDownloader"`) | ✅ re-ejecución detecta "ya contiene…" sin duplicar |
-| 6/6 | Lanza el backend, manda `ping` por stdin y valida `{"status":"ok"}` en stderr | ✅ `ytDlpVersion 2026.08.19` |
+| 1/7 | Verifica `node` (≥22), `npm`, `yt-dlp` en PATH | ✅ node v22.23.3 · npm 12.1.0 · yt-dlp 2026.08.19 |
+| 2/7 | `npm ci` + prueba de carga, apertura y consulta SQLite en memoria | ✅ `better-sqlite3@13` |
+| 3/7 | `tsc` → `dist/index.js` | ✅ |
+| 4/7 | Copia los módulos `.qml` a QuickShell | ✅ |
+| 5/7 | Backup único (`*.mdc-backup`) e integración idempotente en la config ii | ✅ |
+| 6/7 | Instala y habilita el servicio `systemd --user` y el atajo de Hyprland | ✅ |
+| 7/7 | Smoke test del backend: ping JSON-RPC | ✅ |
 
 Flags: `--no-integrate` (no tocar la config ii) · `--uninstall` (restaura backups y borra el módulo).
 
@@ -385,11 +387,11 @@ Repetida desde cero para confirmar que el script implementa la app de verdad:
 
 | Problema | Causa | Corrección |
 |----------|-------|------------|
-| ❌ El QML apuntaba a `~/Descargas/DownLoadsManagerEnd4` (inexistente) | Ruta absoluta hardcodeada de una ubicación anterior del repo | El QML fuente usa `__BACKEND_DIR__` y `install.sh` lo parchea con la ruta real (paso 4/6) |
-| ❌ El módulo nunca cargaba | No estaba registrado en la config ii | Paso 5/6: import + `PanelLoader` + propiedad en `GlobalStates` |
+| ❌ El QML apuntaba a `~/Descargas/DownLoadsManagerEnd4` (inexistente) | Ruta absoluta hardcodeada de una ubicación anterior del repo | El QML fuente usa `__BACKEND_DIR__` y `install.sh` lo parchea con la ruta real (paso 4/7) |
+| ❌ El módulo nunca cargaba | No estaba registrado en la config ii | Paso 5/7: import + `PanelLoader` + propiedad en `GlobalStates` |
 | ❌ No había forma de abrir el panel | Sin propiedad de estado ni IPC | Propiedad en `GlobalStates` + `IpcHandler` (`qs ipc call mediaDownloader toggle`) |
-| ❌ `better-sqlite3` sin binario nativo | npm ≥11 omite scripts de build nativos sin TTY | Paso 2/6: `npm rebuild` + fallback `npm run install` + verificación del `.node` |
-| ❌ El instalador "éxito" aunque npm fallara | `\|\| true` tragaba errores | Paso 2/6 ahora valida el binario nativo y falla con mensaje claro |
+| ❌ `better-sqlite3@11` no compila con Node 26 | Cambios en la API V8 (`PropertyCallbackInfo::This`) | `better-sqlite3@13`, Node ≥22 y prueba de carga/consulta SQLite en el paso 2 |
+| ❌ Los errores de compilación nativa quedaban ocultos | `--silent` y `tail -1` descartaban el detalle útil | El instalador muestra la salida de npm y la excepción completa de SQLite |
 | ❌ Un paréntesis sin cerrar en install.sh | Typo en `$(grep …)` | Corregido + `bash -n` como verificación |
 | ❌ La UI nunca mostraba progreso (barra fija en 0 %) y las descargas parecían quedarse a medias | `--print` implica `--quiet` (yt-dlp no imprime el progreso en modo silencioso) y el prefijo `download:` de `--progress-template` es el **tipo** de plantilla, no texto literal, así que el adaptador nunca recibía líneas de progreso | Paso `--progress` + marcador literal `progress:` en la plantilla; el adaptador emite `progress` de nuevo |
 | ❌ Al cancelar, la descarga se reiniciaba sola y dejaba el archivo a medias | El evento `error` del proceso cancelado entraba en el reintento automático | `DownloadQueue` ignora los errores de tareas `Cancelled` |

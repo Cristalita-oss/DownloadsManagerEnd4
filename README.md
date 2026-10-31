@@ -10,7 +10,7 @@ y cola persistente en SQLite.
 
 [![Versión](https://img.shields.io/badge/versi%C3%B3n-1.1.0-4c8bf5?style=flat-square)](#)
 [![Licencia](https://img.shields.io/badge/licencia-MIT-3da639?style=flat-square)](LICENSE)
-[![Node.js](https://img.shields.io/badge/node-%E2%89%A5%2018-339933?style=flat-square&logo=nodedotjs&logoColor=white)](#-requisitos)
+[![Node.js](https://img.shields.io/badge/node-%E2%89%A5%2022-339933?style=flat-square&logo=nodedotjs&logoColor=white)](#-requisitos)
 [![yt-dlp](https://img.shields.io/badge/yt--dlp-2024%2B-ff0000?style=flat-square&logo=youtube&logoColor=white)](#-requisitos)
 [![QuickShell](https://img.shields.io/badge/QuickShell-ii-8a5cf6?style=flat-square)](https://github.com/Illogical-Impulse/Quickshell)
 [![Hyprland](https://img.shields.io/badge/Hyprland-Lua%20config-00aaff?style=flat-square)](https://hyprland.org)
@@ -98,7 +98,7 @@ y cola persistente en SQLite.
 
 | Dependencia | Versión mínima | Instalación |
 |-------------|:--------------:|-------------|
-| **Node.js** | 18.0.0 | `sudo pacman -S nodejs` |
+| **Node.js** | 22.0.0 | `sudo pacman -S nodejs` |
 | **npm** | — | `sudo pacman -S npm` |
 | **yt-dlp** | 2024.0+ | `sudo pacman -S yt-dlp` |
 | **QuickShell** | última | [Illogical-Impulse/Quickshell](https://github.com/Illogical-Impulse/Quickshell) |
@@ -132,10 +132,10 @@ Pipeline idempotente de **7 pasos**, con backups `*.mdc-backup` antes de tocar n
 | Paso | Acción |
 |:----:|--------|
 | 1 | Verifica dependencias (`node`, `npm`, `yt-dlp`) y versiones mínimas |
-| 2 | `npm ci` + compilación TypeScript (`npm run build`) |
-| 3 | Copia los módulos QML a `~/.config/quickshell/ii/modules/ii/mediaDownloader/` |
-| 4 | Integra el widget en la config QuickShell (tabs, imports, `PanelLoader`, `IpcHandler`) |
-| 5 | Añade la pestaña «Descargas» al `BottomWidgetGroup` |
+| 2 | `npm ci` + verificación de SQLite nativa |
+| 3 | Compilación TypeScript (`npm run build`) |
+| 4 | Copia los módulos QML a `~/.config/quickshell/ii/modules/ii/mediaDownloader/` |
+| 5 | Integra widgets y pestaña «Descargas» en la config QuickShell |
 | 6 | Instala el **demonio `systemd --user`** y el atajo `CTRL + SUPER + D` en Hyprland |
 | 7 | **Smoke test** del backend (ping JSON‑RPC por el socket) |
 
